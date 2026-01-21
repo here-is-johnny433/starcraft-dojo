@@ -1,0 +1,40 @@
+name: Extract StarCraft Meta Data
+on:
+  push:
+    paths:
+      - '**.rep' # Only runs when you upload a replay file
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed to save the JSON back to the repo
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install screp (Replay Parser)
+        run: |
+          wget https://github.com/icza/screp/releases/download/v1.12.22/screp_1.12.22_linux_amd64.tar.gz
+          tar -xvf screp_1.12.22_linux_amd64.tar.gz
+          chmod +x screp
+
+      - name: Parse Replays
+        run: |
+          # Loop through all .rep files and create a corresponding .json file
+          for file in *.rep; do
+            ./screp -cmd "$file" > "${file}.json"
+            echo "Parsed $file"
+          done
+
+      - name: Commit Results
+        run: |
+          git config --global user.name 'StarCraft Coach Bot'
+          git config --global user.email 'bot@noreply.github.com'
+          git add *.json
+          # Only commit if there are new files
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Extracted metadata from replays"
+            git push
+          fi
