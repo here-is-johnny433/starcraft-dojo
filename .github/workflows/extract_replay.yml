@@ -3,7 +3,7 @@ on:
   push:
     paths:
       - '**.rep'
-      - '.github/workflows/extract_replay.yml' # Also run when you fix this file!
+      - '.github/workflows/extract_replay.yml'
   workflow_dispatch:
 
 jobs:
@@ -14,20 +14,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install screp (v1.13.0 Manual Link)
+      - name: Install screp (via GitHub CLI)
+        env:
+          GH_TOKEN: ${{ github.token }} # Uses the built-in token to authenticate
         run: |
-          # We hardcode the link to avoid API errors
-          wget https://github.com/icza/screp/releases/download/v1.13.0/screp_1.13.0_linux_amd64.tar.gz
-          tar -xvf screp_1.13.0_linux_amd64.tar.gz
+          # Ask GitHub nicely for the latest Linux file
+          gh release download --repo icza/screp --pattern '*linux_amd64.tar.gz'
+          
+          # Unzip whatever it gave us
+          tar -xvf *linux_amd64.tar.gz
           chmod +x screp
 
       - name: Parse Replays
         run: |
-          # Loop through all .rep files
           for file in *.rep; do
-            # Skip if no file is found
             [ -e "$file" ] || continue
-            
             echo "Processing: $file"
             ./screp -cmd "$file" > "${file}.json"
           done
