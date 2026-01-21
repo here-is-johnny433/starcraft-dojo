@@ -3,7 +3,7 @@ on:
   push:
     paths:
       - '**.rep'
-      - '.github/workflows/extract_replay.yml'
+      - 'screp*' # Runs if you touch the tool or the replay
   workflow_dispatch:
 
 jobs:
@@ -14,24 +14,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 1. Setup Go, but TURN OFF caching to prevent the "missing go.sum" error
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 'stable'
-          cache: false 
-
-      # 2. Build the tool from scratch (No download links to fail!)
-      - name: Build screp
+      - name: Activate Tool
         run: |
-          echo "Compiling tool..."
-          go install github.com/icza/screp@latest
+          # 1. Rename the long file to just "screp"
+          mv screp*linux* screp
           
-          # Move the finished tool to our current folder
-          mv $(go env GOPATH)/bin/screp .
+          # 2. Make it executable
+          chmod +x screp
           
-          # Verify it works
-          echo "Tool ready:"
+          # 3. Verify it works
           ./screp -version
 
       - name: Parse Replays
