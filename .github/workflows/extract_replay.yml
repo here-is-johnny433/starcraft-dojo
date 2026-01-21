@@ -14,19 +14,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install screp (via GitHub CLI)
-        env:
-          GH_TOKEN: ${{ github.token }} # Uses the built-in token to authenticate
+      - name: Install screp (Universal Finder)
         run: |
-          # Ask GitHub nicely for the latest Linux file
-          gh release download --repo icza/screp --pattern '*linux_amd64.tar.gz'
+          # 1. Get the download URL for the latest Linux version automatically
+          DOWNLOAD_URL=$(curl -s https://api.github.com/repos/icza/screp/releases/latest | jq -r '.assets[] | select(.name | contains("linux_amd64")) | .browser_download_url')
           
-          # Unzip whatever it gave us
-          tar -xvf *linux_amd64.tar.gz
-          chmod +x screp
+          echo "Downloading from: $DOWNLOAD_URL"
+          
+          # 2. Download it
+          wget -q "$DOWNLOAD_URL" -O screp.tar.gz
+          
+          # 3. Unzip it
+          tar -xvf screp.tar.gz
+          
+          # 4. Make it executable (handle standard naming variations)
+          if [ -f screp ]; then
+            chmod +x screp
+          else
+            # Sometimes it unzips into a folder or with a long name; find it and rename it
+            find . -type f -name "screp" -exec chmod +x {} \; -exec mv {} ./screp \;
+          fi
 
       - name: Parse Replays
         run: |
+          # Verify screp is ready
+          ./screp -version
+          
           for file in *.rep; do
             [ -e "$file" ] || continue
             echo "Processing: $file"
