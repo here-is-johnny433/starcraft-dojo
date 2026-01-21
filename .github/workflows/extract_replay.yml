@@ -14,32 +14,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install screp (Universal Finder)
+      - name: Install screp (Manual v1.13.0)
         run: |
-          # 1. Get the download URL for the latest Linux version automatically
-          DOWNLOAD_URL=$(curl -s https://api.github.com/repos/icza/screp/releases/latest | jq -r '.assets[] | select(.name | contains("linux_amd64")) | .browser_download_url')
+          # 1. Download the specific, verified version directly
+          wget https://github.com/icza/screp/releases/download/v1.13.0/screp_1.13.0_linux_amd64.tar.gz
           
-          echo "Downloading from: $DOWNLOAD_URL"
+          # 2. Unzip it
+          tar -xvf screp_1.13.0_linux_amd64.tar.gz
           
-          # 2. Download it
-          wget -q "$DOWNLOAD_URL" -O screp.tar.gz
-          
-          # 3. Unzip it
-          tar -xvf screp.tar.gz
-          
-          # 4. Make it executable (handle standard naming variations)
-          if [ -f screp ]; then
-            chmod +x screp
-          else
-            # Sometimes it unzips into a folder or with a long name; find it and rename it
-            find . -type f -name "screp" -exec chmod +x {} \; -exec mv {} ./screp \;
-          fi
+          # 3. Find and move the binary (handles if it extracts to a subfolder)
+          # This line finds the file named 'screp', makes it executable, and moves it to current folder
+          find . -type f -name "screp" -exec chmod +x {} \; -exec mv {} . \;
 
       - name: Parse Replays
         run: |
-          # Verify screp is ready
+          # Verify the tool works
           ./screp -version
           
+          # Run on all replays
           for file in *.rep; do
             [ -e "$file" ] || continue
             echo "Processing: $file"
