@@ -14,24 +14,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install screp (Manual v1.13.0)
+      # 1. Set up the Go programming language environment
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+
+      # 2. Build the tool from source code (Cannot 404!)
+      - name: Install screp (Build from Source)
         run: |
-          # 1. Download the specific, verified version directly
-          wget https://github.com/icza/screp/releases/download/v1.13.0/screp_1.13.0_linux_amd64.tar.gz
+          echo "Building screp from source..."
+          go install github.com/icza/screp@latest
           
-          # 2. Unzip it
-          tar -xvf screp_1.13.0_linux_amd64.tar.gz
+          # Move the built tool to our folder
+          mv $(go env GOPATH)/bin/screp .
           
-          # 3. Find and move the binary (handles if it extracts to a subfolder)
-          # This line finds the file named 'screp', makes it executable, and moves it to current folder
-          find . -type f -name "screp" -exec chmod +x {} \; -exec mv {} . \;
+          # Verify it works
+          ./screp -version
 
       - name: Parse Replays
         run: |
-          # Verify the tool works
-          ./screp -version
-          
-          # Run on all replays
           for file in *.rep; do
             [ -e "$file" ] || continue
             echo "Processing: $file"
