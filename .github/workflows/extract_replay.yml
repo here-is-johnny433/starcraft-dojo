@@ -2,28 +2,39 @@ name: Extract StarCraft Meta Data
 on:
   push:
     paths:
-      - '**.rep' # Only runs when you upload a replay file
+      - '**.rep'
+  workflow_dispatch: # Allows you to click a "Run" button manually if needed
 
 jobs:
   analyze:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Needed to save the JSON back to the repo
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install screp (Replay Parser)
+      - name: Install screp (Auto-Latest)
         run: |
-          wget https://github.com/icza/screp/releases/download/v1.12.22/screp_1.12.22_linux_amd64.tar.gz
-          tar -xvf screp_1.12.22_linux_amd64.tar.gz
+          # Automatically find and download the latest Linux version of screp
+          curl -s https://api.github.com/repos/icza/screp/releases/latest \
+          | grep "browser_download_url.*linux_amd64" \
+          | cut -d : -f 2,3 \
+          | tr -d \" \
+          | wget -qi -
+          
+          # Unzip it
+          tar -xvf screp*_linux_amd64.tar.gz
           chmod +x screp
 
       - name: Parse Replays
         run: |
-          # Loop through all .rep files and create a corresponding .json file
+          # Process every .rep file in the main folder
           for file in *.rep; do
+            # Skip if file not found (safety check)
+            [ -e "$file" ] || continue
+            
+            echo "Processing: $file"
             ./screp -cmd "$file" > "${file}.json"
-            echo "Parsed $file"
           done
 
       - name: Commit Results
@@ -31,10 +42,10 @@ jobs:
           git config --global user.name 'StarCraft Coach Bot'
           git config --global user.email 'bot@noreply.github.com'
           git add *.json
-          # Only commit if there are new files
+          
           if git diff --staged --quiet; then
-            echo "No changes to commit"
+            echo "No new data to save."
           else
-            git commit -m "Extracted metadata from replays"
+            git commit -m "Analyzed replay data"
             git push
           fi
