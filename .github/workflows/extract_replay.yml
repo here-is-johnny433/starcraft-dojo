@@ -14,24 +14,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install screp (Curl + Follow Redirects)
+      - name: Install screp (Debug Mode)
         run: |
-          echo "Starting download..."
-          
-          # 1. Use curl with -L to follow redirects (Fixes Exit Code 8)
+          echo "1. Downloading screp..."
+          # Download specific version v1.13.0
           curl -L -o screp.tar.gz https://github.com/icza/screp/releases/download/v1.13.0/screp_1.13.0_linux_amd64.tar.gz
           
-          echo "Download complete. Listing files:"
-          ls -la
+          echo "2. Verifying file size..."
+          ls -lh screp.tar.gz
           
-          # 2. Unzip
+          echo "3. Extracting..."
           tar -xvf screp.tar.gz
           
-          # 3. Verify and Move
-          # Find the binary wherever it landed and move it to root
-          find . -type f -name "screp" -exec chmod +x {} \; -exec mv {} . \;
+          echo "4. Locating binary..."
+          # The tarball usually extracts into a folder like 'screp_1.13.0_linux_amd64'
+          # We find the file named 'screp' inside any folder and move it here
+          find . -name screp -type f -exec mv {} . \;
           
-          echo "Tool ready. Checking version:"
+          echo "5. Making executable..."
+          chmod +x screp
+          
+          echo "6. Testing..."
           ./screp -version
 
       - name: Parse Replays
