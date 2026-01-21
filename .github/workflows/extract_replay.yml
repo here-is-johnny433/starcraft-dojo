@@ -3,7 +3,8 @@ on:
   push:
     paths:
       - '**.rep'
-  workflow_dispatch: # Allows you to click a "Run" button manually if needed
+      - '.github/workflows/extract_replay.yml' # Also run when you fix this file!
+  workflow_dispatch:
 
 jobs:
   analyze:
@@ -13,24 +14,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install screp (Auto-Latest)
+      - name: Install screp (v1.13.0 Manual Link)
         run: |
-          # Automatically find and download the latest Linux version of screp
-          curl -s https://api.github.com/repos/icza/screp/releases/latest \
-          | grep "browser_download_url.*linux_amd64" \
-          | cut -d : -f 2,3 \
-          | tr -d \" \
-          | wget -qi -
-          
-          # Unzip it
-          tar -xvf screp*_linux_amd64.tar.gz
+          # We hardcode the link to avoid API errors
+          wget https://github.com/icza/screp/releases/download/v1.13.0/screp_1.13.0_linux_amd64.tar.gz
+          tar -xvf screp_1.13.0_linux_amd64.tar.gz
           chmod +x screp
 
       - name: Parse Replays
         run: |
-          # Process every .rep file in the main folder
+          # Loop through all .rep files
           for file in *.rep; do
-            # Skip if file not found (safety check)
+            # Skip if no file is found
             [ -e "$file" ] || continue
             
             echo "Processing: $file"
